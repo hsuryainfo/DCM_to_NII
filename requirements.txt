@@ -1,5 +1,3 @@
- pydicom 
- nibabel 
- numpy 
- opencv-python
- skikit-image
+#python_version == "3.13.5"
+pydicom
+SimpleITK
