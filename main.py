@@ -4,11 +4,11 @@ from src.converter.dicom2nifti import extract_sort_convert_dicoms
 
 
 if __name__ == "__main__":
-    input_root = "DICOM sorted"
-    output_folder = "organized_dicoms"
-    unknown_folder = "position_not_found"
-    nifti_output_folder = "output_nii"
-    log_folder = "logs"
+    input_root = os.getenv("INPUT_ROOT", "./input/dicom_sorted")
+    output_folder = os.getenv("OUTPUT_FOLDER", "./output/organized_dicoms")
+    unknown_folder = os.getenv("UNKNOWN_FOLDER", "./output/position_not_found")
+    nifti_output_folder = os.getenv("NIFTI_OUTPUT_FOLDER", "./output/nifti")
+    log_folder = os.getenv("LOG_FOLDER", "./logs/dicom2nifti.log")
 
     extract_sort_convert_dicoms(
         input_root,
