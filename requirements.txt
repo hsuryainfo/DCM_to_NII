@@ -1,5 +1,0 @@
- pydicom 
- nibabel 
- numpy 
- opencv-python
- skikit-image
