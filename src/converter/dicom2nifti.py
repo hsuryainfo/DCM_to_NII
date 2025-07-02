@@ -1,5 +1,7 @@
 
-import os
+import os, re
+from datetime import datetime
+
 import shutil
 import pydicom
 import SimpleITK as sitk
@@ -27,9 +29,15 @@ def extract_sort_convert_dicoms(input_root, output_folder, unknown_folder, nifti
     os.makedirs(output_folder, exist_ok=True)
     os.makedirs(unknown_folder, exist_ok=True)
     os.makedirs(nifti_output_folder, exist_ok=True)
+    month_abbrs = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
     for root, _, files in os.walk(input_root):
         folder_name = os.path.basename(root)
+        print(f"Processing folder: {folder_name}")
+        # Only convert folder name if it contains a month abbreviation
+        if any(month in folder_name for month in month_abbrs):
+            folder_name = convert_folder_name(folder_name)
+        
         for filename in files:
             if not filename.lower().endswith('.dcm'):
                 continue
@@ -50,8 +58,9 @@ def extract_sort_convert_dicoms(input_root, output_folder, unknown_folder, nifti
             if view and side:
                 view = view.strip().upper()
                 side = side.strip().upper()
-
+                
                 subfolder = os.path.join(output_folder, folder_name)
+                print(f"Processing {filename} in {subfolder} in {folder_name}")
                 os.makedirs(subfolder, exist_ok=True)
                 
                 new_name = f"{side}_{view}_{filename}"
@@ -102,10 +111,40 @@ def convert_dicom_to_nifti(dicom_folder, output_folder):
             print(msg)
             logging.error(msg)
 
+def convert_folder_name(folder_name):
+    # Regex to extract the parts: prefix, day, month, and year
+    match = re.match(r"(\d+)_?(\d{1,2})([A-Za-z]+)(\d{4})", folder_name)
+    if not match:
+        raise ValueError(f"Invalid folder name format: {folder_name}")
+
+    prefix, day, month_str, year = match.groups()
+
+    # Fix common month misspellings
+    month_corrections = {
+        'Jan': 'Jan', 'Feb': 'Feb', 'Mar': 'Mar', 'Apr': 'Apr', 'Aprl': 'Apr', 'May': 'May',
+        'Jun': 'Jun', 'July': 'Jul', 'Jul': 'Jul', 'Aug': 'Aug', 'Sept': 'Sep', 'Sep': 'Sep',
+        'Oct': 'Oct', 'Nov': 'Nov', 'Dec': 'Dec'
+    }
+
+    # Normalize and correct the month
+    month_str_cap = month_str.capitalize()
+    if month_str_cap not in month_corrections:
+        raise ValueError(f"Unknown or misspelled month: {month_str}")
+    
+    corrected_month = month_corrections[month_str_cap]
+
+    # Parse to datetime and reformat
+    date_str = f"{day} {corrected_month} {year}"
+    date_obj = datetime.strptime(date_str, "%d %b %Y")
+
+    return f"{prefix}_{date_obj.strftime('%d%m%Y')}"
+    
 #all input and output folders
 
 if __name__ == "__main__":
-    input_root = "DICOM sorted"                   
+    input_root = "DICOM sorted"  
+        
+                 
     output_folder = "organized_dicoms"              
     unknown_folder = "position_not_found"           
     nifti_output_folder = "output_nii"              
